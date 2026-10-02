@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Offline build: NuGet is unreachable from this machine (TLS broken by a local proxy),
+    so we compile against the .NET 6 facade assemblies that ship inside the game folder
+    plus SMAPI / Stardew DLLs. No PackageReference, no targeting pack download.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>ValleyTalkMemory</AssemblyName>
+    <RootNamespace>ValleyTalkMemory</RootNamespace>
+    <Version>0.1.0</Version>
+    <GamePath>E:\SteamLibrary\steamapps\common\Stardew Valley</GamePath>
+    <SmapiInternal>$(GamePath)\smapi-internal</SmapiInternal>
+
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <DebugType>portable</DebugType>
+    <NoWarn>$(NoWarn);CS1701;CS1702;CS0436;NU1701;CA1416;CA1416</NoWarn>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <!-- .NET 6 assemblies shipped with the game. Note: the runtime folder's facades type-forward
+       into System.Private.CoreLib, so the core library itself must be referenced too. -->
+  <ItemGroup>
+    <Reference Include="$(GamePath)\System.Private.*.dll" Exclude="$(GamePath)\*.Native.dll" />
+    <Reference Include="$(GamePath)\netstandard.dll" />
+    <Reference Include="$(GamePath)\mscorlib.dll" />
+    <Reference Include="$(GamePath)\System.*.dll" Exclude="$(GamePath)\System.Private.*.dll;$(GamePath)\*.Native.dll" />
+  </ItemGroup>
+
+  <!-- Game + SMAPI + third-party managed assemblies -->
+  <ItemGroup>
+    <Reference Include="$(GamePath)\StardewModdingAPI.dll" />
+    <Reference Include="$(GamePath)\Stardew Valley.dll" />
+    <Reference Include="$(GamePath)\StardewValley.GameData.dll" />
+    <Reference Include="$(GamePath)\xTile.dll" />
+    <Reference Include="$(GamePath)\MonoGame.Framework.dll" />
+    <Reference Include="$(GamePath)\Lidgren.Network.dll" />
+    <Reference Include="$(GamePath)\TextCopy.dll" />
+    <Reference Include="$(GamePath)\BmFont.dll" />
+    <Reference Include="$(GamePath)\CPExtBmFont.dll" />
+    <Reference Include="$(GamePath)\Steamworks.NET.dll" />
+    <Reference Include="$(GamePath)\GalaxyCSharp.dll" />
+    <Reference Include="$(SmapiInternal)\0Harmony.dll" />
+    <Reference Include="$(SmapiInternal)\Newtonsoft.Json.dll" />
+    <Reference Include="$(SmapiInternal)\SMAPI.Toolkit.CoreInterfaces.dll" />
+    <Reference Include="$(SmapiInternal)\SMAPI.Toolkit.dll" />
+    <Reference Include="$(SmapiInternal)\Pintail.dll" />
+  </ItemGroup>
+
+  <!-- Referenced game/SMAPI assemblies must never be copied next to the mod -->
+  <ItemDefinitionGroup>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+
+  <!-- Auto-deploy the built mod into the game's Mods folder -->
+  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(DeployMod)' != 'false'">
+    <ItemGroup>
+      <_DeployFiles Include="$(TargetDir)$(AssemblyName).dll" />
+      <_DeployFiles Include="$(TargetDir)$(AssemblyName).pdb" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+      <_DeployFiles Include="$(MSBuildProjectDirectory)\manifest.json" />
+    </ItemGroup>
+    <MakeDir Directories="$(GamePath)\Mods\ValleyTalkMemory" />
+    <Copy SourceFiles="@(_DeployFiles)" DestinationFolder="$(GamePath)\Mods\ValleyTalkMemory" />
+    <Message Importance="high" Text="Deployed $(AssemblyName) -> $(GamePath)\Mods\ValleyTalkMemory" />
+  </Target>
+
+</Project>

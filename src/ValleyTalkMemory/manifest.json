@@ -1,0 +1,15 @@
+{
+  "Name": "ValleyTalk Memory",
+  "Author": "local",
+  "Version": "0.1.0",
+  "Description": "Long-term / short-term memory extension for ValleyTalk.",
+  "UniqueID": "local.ValleyTalkMemory",
+  "EntryDll": "ValleyTalkMemory.dll",
+  "MinimumApiVersion": "4.0.0",
+  "Dependencies": [
+    {
+      "UniqueID": "dandm1.ValleyTalk",
+      "IsRequired": true
+    }
+  ]
+}

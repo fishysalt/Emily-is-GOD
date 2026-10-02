@@ -1,0 +1,13 @@
+﻿# build output
+bin/
+obj/
+
+# local config / generated at runtime
+config.json
+memory-*.json
+debug/
+
+# IDE
+.vs/
+.idea/
+*.user

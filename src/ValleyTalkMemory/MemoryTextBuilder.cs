@@ -46,6 +46,9 @@ internal static class MemoryTextBuilder
         if (!string.IsNullOrWhiteSpace(situation))
             sb.Append(situation);
 
+        if (!string.IsNullOrWhiteSpace(config.DialogueContinuityInstruction))
+            sb.AppendLine(config.DialogueContinuityInstruction);
+
         if (!string.IsNullOrWhiteSpace(config.MemoryInstruction))
             sb.AppendLine(config.MemoryInstruction);
 

@@ -114,6 +114,18 @@ internal static class DevActions
         }
     }
 
+    /// <summary>Dumps the animation keys a schedule entry may use as its end-of-route behaviour.</summary>
+    public static void DumpAnimations(IMonitor monitor)
+    {
+        try
+        {
+            var anims = DataLoader.AnimationDescriptions(Game1.content);
+            if (anims == null) { monitor.Log("[diag] AnimationDescriptions is null", LogLevel.Warn); return; }
+            monitor.Log($"[diag] Data/AnimationDescriptions has {anims.Count} keys: {string.Join(", ", anims.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase))}", LogLevel.Info);
+        }
+        catch (Exception ex) { monitor.Log($"[diag] could not read AnimationDescriptions: {ex.Message}", LogLevel.Warn); }
+    }
+
     /// <summary>Manual promise injection. <paramref name="args"/> = [npc, location, time, until?, x?, y?]</summary>
     public static void Goto(IReadOnlyList<string> args, IMonitor monitor)
     {
@@ -211,6 +223,9 @@ internal static class DevActions
             case "schedule":
                 if (parts.Count == 0) monitor.Log("usage: schedule <npc>", LogLevel.Info);
                 else ShowSchedule(parts[0], monitor);
+                break;
+            case "anims":
+                DumpAnimations(monitor);
                 break;
             case "diag":
                 if (parts.Count == 0) monitor.Log("usage: diag <npc>", LogLevel.Info);

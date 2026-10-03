@@ -98,6 +98,9 @@ public sealed class ModConfig
     public string LabelEvent { get; set; } = "事件";
     public string MemoryInstruction { get; set; } = "以上记忆按时间先后排列，是你亲身经历或亲耳听到的。请在对话中自然运用，不要逐条复述，也不要声称自己记得没发生过的细节。";
 
+    /// <summary>Biases the model toward keeping a conversation going instead of ending it after one line.</summary>
+    public string DialogueContinuityInstruction { get; set; } = "【对话连续性】优先让对话可以继续：每轮尽量给出至少一个能让农夫继续接话的选项，被回应后推进话题或引出相关的新话题；只有话题自然结束、或她确实需要离开时才结束对话。";
+
     // ---- "self knowledge": what she knows about her own day right now ----
     // ValleyTalk already tells the model which places she still plans to visit today, but not the
     // times, and it never mentions festivals. This block supplies both, so she can say "I'm busy at

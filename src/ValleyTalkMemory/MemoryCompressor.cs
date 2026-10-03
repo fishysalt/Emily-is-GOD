@@ -146,7 +146,7 @@ internal sealed class MemoryCompressor
     private static string BuildTranscript(string npc, List<RawEvent> events, ModConfig config)
     {
         var sb = new StringBuilder();
-        foreach (RawEvent e in events)
+        foreach (RawEvent e in MemoryMerge.WithoutCoveredLines(events))
             sb.AppendLine(MemoryTextBuilder.Format(e, npc, config));
         return sb.ToString();
     }

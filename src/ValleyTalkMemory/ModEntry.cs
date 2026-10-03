@@ -215,6 +215,8 @@ public sealed class ModEntry : Mod
 
             Monitor.Log($"Save loaded: memory for {Store.KnownNpcs.Count()} NPCs, {changed.Count} refreshed from saved ValleyTalk history.", LogLevel.Info);
 
+            ApplyTodayPromises();
+
             if (Config.AutoBackfillExistingHistory)
                 BackfillExistingHistory();
 
@@ -233,6 +235,7 @@ public sealed class ModEntry : Mod
         {
             NpcNameResolver.Rebuild(_helper, Monitor);
             ReconcileNames();
+            ApplyTodayPromises();
             PollLiveHistory();
 
             long currentWeek = GameWeek.CurrentWeek(Config.DaysPerWeek);
@@ -394,14 +397,21 @@ public sealed class ModEntry : Mod
                 continue;
             }
             if (result.Promise == null)
-                continue;   // the model decided there is no tool call
+            {
+                Monitor.Log("[promise] no tool call — the model judged this was not a commitment to act.", LogLevel.Info);
+                continue;
+            }
 
             Monitor.Log($"[promise] tool call: {result.RawToolCall}", LogLevel.Info);
 
             if (result.Promise.Day != GameWeek.Today)
             {
-                Monitor.Log($"[promise] '{result.Promise.Location}' is for a future day ({GameWeek.Describe(result.Promise.Day)}); "
-                            + "persisting multi-day promises is not wired up yet, so it is only recorded in memory.", LogLevel.Warn);
+                NpcMemory owner = Store.GetOrCreate(result.Promise.Npc);
+                owner.Promises.RemoveAll(p => p.Day == result.Promise.Day && p.ArriveTime == result.Promise.ArriveTime && p.Location == result.Promise.Location);
+                owner.Promises.Add(result.Promise);
+                Store.SaveBackup();
+                Monitor.Log($"[promise] stored for {GameWeek.Describe(result.Promise.Day)}: "
+                            + $"{result.Promise.Npc} -> {result.Promise.Location} at {result.Promise.ArriveTime}", LogLevel.Info);
                 continue;
             }
 
@@ -560,6 +570,46 @@ public sealed class ModEntry : Mod
                         + "Results are mirrored to disk as soon as each one finishes.", LogLevel.Info);
             Store.SaveBackup();
         }
+    }
+
+    /// <summary>
+    /// Re-applies the commitments that fall on today. Necessary because NPC.Schedule is not
+    /// serialised — the game rebuilds it from the asset every morning, so anything we injected
+    /// yesterday is gone by the time the promise is due.
+    /// </summary>
+    internal int ApplyTodayPromises()
+    {
+        long today = GameWeek.Today;
+        int applied = 0;
+
+        foreach (NpcMemory memory in Store.All.ToList())
+        {
+            if (memory.Promises == null || memory.Promises.Count == 0)
+                continue;
+
+            foreach (SchedulePromise promise in memory.Promises.Where(p => p.Day == today && p.ArriveTime > Game1.timeOfDay).ToList())
+            {
+                string error = NpcScheduler.Apply(promise, Monitor);
+                if (error == null)
+                {
+                    Monitor.Log($"[promise] replayed today's commitment: {promise.Npc} -> {promise.Location} at {promise.ArriveTime}", LogLevel.Info);
+                    applied++;
+                }
+                else
+                {
+                    Monitor.Log($"[promise] could not replay today's commitment: {error}", LogLevel.Warn);
+                    RecordUnfulfilledPromise(promise.Npc, $"\uFF08\u7b54\u5e94\u8fc7\u300c{promise.SourceText}\u300d\u4f46\u6ca1\u80fd\u6210\u884c\uff1a{error}\uFF09");
+                }
+                memory.Promises.Remove(promise);
+            }
+        }
+
+        if (applied > 0)
+        {
+            Store.SaveBackup();
+            Injector.RefreshAll();
+        }
+        return applied;
     }
 
     private void ApplyCompression(CompressionResult result)

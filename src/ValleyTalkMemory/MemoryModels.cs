@@ -62,6 +62,9 @@ internal sealed class NpcMemory
 
     /// <summary>Set once the existing ValleyTalk backlog has been back-filled (or skipped).</summary>
     public bool Backfilled { get; set; }
+
+    /// <summary>Commitments not yet acted on. Persisted so "tomorrow" survives the overnight rebuild.</summary>
+    public List<SchedulePromise> Promises { get; set; } = new List<SchedulePromise>();
 }
 
 /// <summary>
@@ -89,4 +92,6 @@ internal sealed class NpcMemoryBackup
     public long CompressedThroughWeek { get; set; } = -1;
 
     public bool Backfilled { get; set; }
+
+    public List<SchedulePromise> Promises { get; set; } = new List<SchedulePromise>();
 }

@@ -73,10 +73,9 @@ internal sealed class MemoryStore
 
     private void Trim(NpcMemory memory)
     {
-        int dropped = MemoryMerge.DropCoveredLines(memory.Raw);
-        if (dropped > 0)
-            _monitor?.Log($"Folded {dropped} line(s) for {memory.Npc} that were already contained in a longer line at the same minute.", LogLevel.Trace);
-
+        // Covered-line folding happens at render time, not here: removing those lines from storage
+        // made the next history poll re-add them (dedup only sees what is still stored), churning
+        // add -> fold -> add every few seconds.
         int max = Math.Max(50, _config.MaxRawEventsPerNpc);
         if (memory.Raw.Count <= max)
             return;
@@ -200,7 +199,8 @@ internal sealed class MemoryStore
                         Npc = m.Npc,
                         Weeks = m.Weeks,
                         CompressedThroughWeek = m.CompressedThroughWeek,
-                        Backfilled = m.Backfilled
+                        Backfilled = m.Backfilled,
+                        Promises = m.Promises ?? new List<SchedulePromise>()
                     })
                     .ToList()
             };
@@ -252,6 +252,14 @@ internal sealed class MemoryStore
                 memory.Weeks = memory.Weeks.OrderBy(w => w.WeekIndex).ToList();
                 memory.CompressedThroughWeek = Math.Max(memory.CompressedThroughWeek, saved.CompressedThroughWeek);
                 memory.Backfilled |= saved.Backfilled;
+
+                if (memory.Promises == null)
+                    memory.Promises = new List<SchedulePromise>();
+                foreach (SchedulePromise p in saved.Promises ?? new List<SchedulePromise>())
+                {
+                    if (!memory.Promises.Any(x => x.Day == p.Day && x.ArriveTime == p.ArriveTime && x.Location == p.Location))
+                        memory.Promises.Add(p);
+                }
 
                 if (memory.Weeks.Count > before)
                     restored += memory.Weeks.Count - before;

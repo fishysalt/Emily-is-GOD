@@ -33,8 +33,8 @@ internal static class MemoryTextBuilder
 
         if (memory != null)
         {
-            List<RawEvent> shortTerm = memory.Raw
-                .Where(e => weekOf(e) > memory.CompressedThroughWeek)
+            List<RawEvent> shortTerm = MemoryMerge.WithoutCoveredLines(
+                    memory.Raw.Where(e => weekOf(e) > memory.CompressedThroughWeek))
                 .OrderBy(e => e.Day)
                 .ThenBy(e => e.Time)
                 .ToList();

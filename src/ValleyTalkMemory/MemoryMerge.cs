@@ -43,6 +43,14 @@ internal static class MemoryMerge
     /// prompt budget gets spent repeating the same sentences. Only lines of the same kind are
     /// compared, so the farmer's lines are never swallowed by an NPC line.
     /// </summary>
+    /// <summary>Non-mutating variant, used at render/compression time so storage stays complete.</summary>
+    public static List<RawEvent> WithoutCoveredLines(IEnumerable<RawEvent> source)
+    {
+        List<RawEvent> copy = source.ToList();
+        DropCoveredLines(copy);
+        return copy;
+    }
+
     /// <returns>How many lines were dropped.</returns>
     public static int DropCoveredLines(List<RawEvent> raw)
     {

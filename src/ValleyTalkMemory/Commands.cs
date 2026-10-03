@@ -125,6 +125,24 @@ internal static class Commands
                     : $"Could not apply: {error}", error == null ? LogLevel.Info : LogLevel.Warn);
             });
 
+        helper.ConsoleCommands.Add("vtmemory_promises", "List stored schedule promises. Usage: vtmemory_promises [npc]", (cmd, args) =>
+        {
+            string filter = args.Length > 0 ? args[0] : null;
+            int total = 0;
+            foreach (NpcMemory memory in mod.Store.All)
+            {
+                if (filter != null && !memory.Npc.Equals(filter, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                foreach (SchedulePromise p in memory.Promises ?? new List<SchedulePromise>())
+                {
+                    total++;
+                    monitor.Log($"  [{GameWeek.Describe(p.Day)}] {p.ArriveTime / 100:00}:{p.ArriveTime % 100:00} -> {p.Location} ({p.TileX},{p.TileY})"
+                                + (p.UntilTime > 0 ? $" until {p.UntilTime}" : "") + $"  \u300c{p.SourceText}\u300d", LogLevel.Info);
+                }
+            }
+            monitor.Log(total == 0 ? "No stored promises." : $"{total} promise(s).", LogLevel.Info);
+        });
+
         helper.ConsoleCommands.Add("vtmemory_status", "Show memory store status. Optional: NPC name.", (cmd, args) =>
         {
             string filter = args.Length > 0 ? args[0] : null;
